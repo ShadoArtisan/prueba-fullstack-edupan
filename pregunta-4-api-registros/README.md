@@ -1,74 +1,71 @@
 # Pregunta 4 — Programa que responde consultas de registros
 
-## ¿Qué hace esto?
+## De qué va esto
 
-Imagina que una organización externa (por ejemplo, un banco o una entidad de gobierno)
-necesita preguntarle a la institución: "¿existe un registro con este número y este
-nombre?". Este programa es quien recibe esa pregunta y responde, pero antes hace varias
-comprobaciones para cuidar la información:
+Pensemos en una organización externa (un banco, una entidad de gobierno, lo que sea) que
+necesita preguntarle a la institución "¿existe un registro con este número y este
+nombre?". Este programa es el que recibe esa pregunta y contesta, pero antes hace unas
+cuantas verificaciones:
 
-1. **¿Quién pregunta?** La organización debe enviar una clave de acceso. Si no la envía, o
-   la clave no es válida, el programa no responde nada más y avisa que falta identificarse.
-2. **¿Tiene permiso vigente?** Si la clave es válida pero el convenio con esa organización
-   ya venció o fue desactivado, tampoco se le da información.
-3. **¿Preguntó bien?** Tiene que dar tanto el número de identificación como el nombre, no
-   uno solo. Si falta alguno, se le pide que complete los datos.
-4. **¿Ya preguntó demasiadas veces hoy?** Cada organización tiene un límite diario de
-   consultas. Si ya lo alcanzó, se le avisa que debe esperar a mañana.
-5. **¿Existe el registro?** Si pasó todos los pasos anteriores, se busca el registro y se
-   le devuelve la información (o se le avisa que no se encontró nada con esos datos).
+1. **¿Quién pregunta?** Tiene que mandar una clave de acceso. Sin ella, o con una clave
+   que no es válida, ahí queda: se le avisa que falta identificarse y no se sigue.
+2. **¿Tiene permiso vigente?** Puede que la clave sea válida pero el convenio con esa
+   organización ya venció o lo desactivaron. En ese caso tampoco se le da nada.
+3. **¿Preguntó bien?** Tiene que mandar número de identificación y nombre juntos, no uno
+   solo. Si falta alguno, se le pide que complete.
+4. **¿Ya preguntó demasiado hoy?** Cada organización tiene un tope diario de consultas. Si
+   ya lo llegó, se le avisa que tiene que esperar al día siguiente.
+5. **¿Existe el registro?** Si pasó todo lo anterior, ahí sí se busca el dato y se le
+   devuelve, o se le avisa que no hay nada con esos datos.
 
-Cada uno de estos intentos —se le haya dado la información o no— queda guardado, con
-fecha y hora, para poder revisar después quién consultó qué.
+Cada intento queda guardado con fecha y hora —le haya dado la información o no— para
+poder revisar después quién preguntó qué.
 
-## Cómo está organizado el código
+## Cómo está armado el código
 
-- Una parte recibe la solicitud y decide qué responder.
-- Otra parte tiene las reglas explicadas arriba (permiso, límite diario, búsqueda).
-- Otra parte se encarga de leer y guardar los datos en la base de datos.
+- Una parte recibe la solicitud y decide qué contestar.
+- Otra tiene las reglas de arriba (permiso, tope diario, búsqueda).
+- Otra se encarga de leer y guardar en la base de datos.
 
-Separarlo así hace que cada regla se pueda revisar y probar por separado, sin tener que
-correr todo el sistema completo cada vez.
+Separarlo así permite revisar y probar cada regla por su cuenta, sin tener que levantar
+todo el sistema para probar una sola cosa. También hay pruebas automáticas que confirman,
+entre otras cosas, que el tope diario se calcula bien.
 
-También hay un conjunto de pruebas automáticas que verifican, entre otras cosas, que el
-límite diario de consultas se calcule correctamente.
-
-> Este programa necesita las tablas que se crean en la carpeta
+> Este programa necesita las tablas de la carpeta
 > [`pregunta-7-esquema-basedatos`](../pregunta-7-esquema-basedatos) para poder guardar y
-> consultar datos reales.
+> consultar datos de verdad.
 
 ## Cómo probarlo
 
-Se necesita tener instalado el **.NET 8 SDK** (el programa que permite ejecutar este tipo
-de proyectos) y, si se quiere probar con datos reales, un **SQL Server** disponible.
+Hace falta el **.NET 8 SDK** instalado y, si quieres probarlo con datos reales, un **SQL
+Server** a mano.
 
 ### 1. Preparar la base de datos (opcional)
 
-Si quieres probarlo contra datos reales, primero crea las tablas y carga algunos datos de
-ejemplo (esto está explicado en la carpeta de la pregunta 7):
+Si quieres probarlo con datos reales, primero crea las tablas y carga algunos datos de
+ejemplo (los pasos completos están en la carpeta de la pregunta 7):
 
 ```bash
 sqlcmd -S localhost -i ../pregunta-7-esquema-basedatos/schema.sql
 sqlcmd -S localhost -i ../pregunta-7-esquema-basedatos/datos-prueba.sql
 ```
 
-### 2. Encender el programa
+### 2. Prender el programa
 
-Abre una terminal en esta carpeta y escribe:
+Abre una terminal en esta carpeta:
 
 ```bash
 cd src/RegistrosInstitucionales.Api
 dotnet run
 ```
 
-Esto deja el programa corriendo y esperando solicitudes. También se abre una página de
-prueba (Swagger) donde se puede probar el endpoint desde el navegador, sin necesidad de
-escribir comandos.
+Con esto el programa queda corriendo, esperando solicitudes. También se abre una página
+de prueba (Swagger) para probarlo desde el navegador sin escribir comandos.
 
-### 3. Hacer una prueba real
+### 3. Probarlo de verdad
 
-Con los datos de ejemplo ya cargados, se puede simular una consulta con este comando (la
-clave de acceso de prueba es `clave-demo-123`):
+Con los datos de ejemplo cargados, se puede simular una consulta así (la clave de prueba
+es `clave-demo-123`):
 
 ```bash
 curl -k -X POST https://localhost:7000/api/registros/consulta \
@@ -77,9 +74,9 @@ curl -k -X POST https://localhost:7000/api/registros/consulta \
   -d "{\"identificador\": \"8-123-456\", \"nombre\": \"Juan Pérez\"}"
 ```
 
-Con esos datos de ejemplo, debería responder con la información del registro. Si cambias
-la clave de acceso por cualquier otra, o borras el dato del nombre, vas a ver que el
-programa responde explicando qué faltó o qué salió mal, en vez de simplemente fallar.
+Debería devolver la información del registro. Si cambias la clave por cualquier otra, o
+borras el nombre, vas a ver que el programa explica qué faltó en vez de simplemente
+fallar sin decir nada.
 
 ### 4. Correr las pruebas automáticas
 
@@ -88,14 +85,13 @@ cd ..
 dotnet test
 ```
 
-Si todo está bien, debería decir que todas las pruebas pasaron correctamente.
+Si todo salió bien, va a decir que todas las pruebas pasaron.
 
-## Decisiones que se tomaron y por qué
+## Un par de decisiones que vale la pena explicar
 
-- **La clave de acceso nunca se guarda tal cual.** Se guarda una versión "encriptada" de
-  ella, para que ni siquiera alguien con acceso a la base de datos pueda ver la clave
-  original.
-- **El límite diario se revisa en dos lugares distintos:** una vez en el programa (que es
-  donde se le explica al usuario por qué se le negó la respuesta) y otra vez directamente
-  en la base de datos, como respaldo, por si algún día alguien intenta escribir en la base
-  de datos sin pasar por este programa.
+- **La clave de acceso nunca se guarda tal cual.** Se guarda una versión encriptada, así
+  ni alguien con acceso directo a la base de datos puede ver la clave original.
+- **El tope diario se revisa dos veces:** una en el programa (ahí es donde se le explica
+  al usuario por qué se le negó la respuesta) y otra directamente en la base de datos,
+  como respaldo, por si alguna vez alguien intenta escribir ahí sin pasar por este
+  programa.
