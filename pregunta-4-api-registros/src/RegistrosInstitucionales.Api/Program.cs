@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using RegistrosInstitucionales.Api.Auth;
 using RegistrosInstitucionales.Api.Data;
 using RegistrosInstitucionales.Api.Repositories;
-using RegistrosInstitucionales.Api.Reportes;
 using RegistrosInstitucionales.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +21,6 @@ builder.Services.AddScoped<IEntidadRepository, EntidadRepository>();
 builder.Services.AddScoped<IRegistroRepository, RegistroRepository>();
 builder.Services.AddScoped<ILogAccesoRepository, LogAccesoRepository>();
 builder.Services.AddScoped<IRegistroConsultaService, RegistroConsultaService>();
-builder.Services.AddScoped<IReporteAccesosRepository, ReporteAccesosRepository>();
 builder.Services.AddScoped<ApiKeyAuthFilter>();
 
 var app = builder.Build();

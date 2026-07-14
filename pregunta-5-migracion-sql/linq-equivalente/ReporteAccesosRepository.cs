@@ -1,14 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using RegistrosInstitucionales.Api.Data;
-using RegistrosInstitucionales.Api.Entities;
 
-namespace RegistrosInstitucionales.Api.Reportes;
+namespace LinqEquivalente;
 
-public class ReporteAccesosRepository : IReporteAccesosRepository
+// Pregunta 5, punto 10: equivalente en LINQ / EF Core de la consulta SQL
+// migrada (ver ../migracion-sybase-sqlserver.sql).
+public class ReporteAccesosRepository
 {
-    private readonly AppDbContext _context;
+    private const string Aprobado = "APROBADO";
 
-    public ReporteAccesosRepository(AppDbContext context)
+    private readonly ReporteAccesosDbContext _context;
+
+    public ReporteAccesosRepository(ReporteAccesosDbContext context)
     {
         _context = context;
     }
@@ -21,7 +23,7 @@ public class ReporteAccesosRepository : IReporteAccesosRepository
         var fin = inicio.AddYears(1);
 
         return await _context.LogAccesos
-            .Where(l => l.FechaHora >= inicio && l.FechaHora < fin && l.Resultado == ResultadoAcceso.Aprobado)
+            .Where(l => l.FechaHora >= inicio && l.FechaHora < fin && l.Resultado == Aprobado)
             .Join(
                 _context.Entidades,
                 log => log.EntidadId,

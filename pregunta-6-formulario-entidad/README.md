@@ -22,7 +22,7 @@ Todo el código relevante está en `src/`:
 Requisitos: Node.js 18 o superior.
 
 ```bash
-cd frontend/entidad-registro-form
+cd pregunta-6-formulario-entidad
 npm install
 npm run dev
 ```
@@ -30,8 +30,8 @@ npm run dev
 Abre `http://localhost:5173`.
 
 Por defecto el formulario intenta enviar los datos a `https://localhost:7000` (la URL por
-defecto del backend en desarrollo, ver [`backend/README.md`](../../backend/README.md)). Si tu
-backend corre en otra URL, copia `.env.example` a `.env` y ajusta `VITE_API_BASE_URL`.
+defecto del backend en desarrollo, ver [`../pregunta-4-api-registros/README.md`](../pregunta-4-api-registros/README.md)).
+Si tu backend corre en otra URL, copia `.env.example` a `.env` y ajusta `VITE_API_BASE_URL`.
 
 ## Cómo se probó
 
