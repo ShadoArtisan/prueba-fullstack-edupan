@@ -1,56 +1,74 @@
-# Pregunta 4 — API REST .NET 8: endpoint de consulta con control de acceso (25 pts)
+# Pregunta 4 — Programa que responde consultas de registros
 
-Implementa `POST /api/registros/consulta`: valida la API Key y el convenio de la entidad,
-exige identificador + nombre, revisa la cuota diaria, busca el registro y deja todo
-registrado en el log de accesos.
+## ¿Qué hace esto?
 
-> Necesita las tablas de [`../pregunta-7-esquema-basedatos`](../pregunta-7-esquema-basedatos)
-> para correr contra una base real.
+Imagina que una organización externa (por ejemplo, un banco o una entidad de gobierno)
+necesita preguntarle a la institución: "¿existe un registro con este número y este
+nombre?". Este programa es quien recibe esa pregunta y responde, pero antes hace varias
+comprobaciones para cuidar la información:
 
-## Estructura
+1. **¿Quién pregunta?** La organización debe enviar una clave de acceso. Si no la envía, o
+   la clave no es válida, el programa no responde nada más y avisa que falta identificarse.
+2. **¿Tiene permiso vigente?** Si la clave es válida pero el convenio con esa organización
+   ya venció o fue desactivado, tampoco se le da información.
+3. **¿Preguntó bien?** Tiene que dar tanto el número de identificación como el nombre, no
+   uno solo. Si falta alguno, se le pide que complete los datos.
+4. **¿Ya preguntó demasiadas veces hoy?** Cada organización tiene un límite diario de
+   consultas. Si ya lo alcanzó, se le avisa que debe esperar a mañana.
+5. **¿Existe el registro?** Si pasó todos los pasos anteriores, se busca el registro y se
+   le devuelve la información (o se le avisa que no se encontró nada con esos datos).
 
-```
-src/RegistrosInstitucionales.Api/
-  Controllers/RegistrosController.cs   -> el endpoint en sí
-  Services/RegistroConsultaService.cs  -> la lógica de negocio (cuota, búsqueda, log)
-  Repositories/                        -> acceso a datos con EF Core
-  Auth/ApiKeyAuthFilter.cs             -> valida X-API-Key antes de llegar al controller
-  Data/AppDbContext.cs                 -> mapeo EF Core -> tablas de la Pregunta 7
-tests/RegistrosInstitucionales.Api.Tests/
-  CuotaDiariaTests.cs                  -> test unitario de la cuota diaria (pedido en el enunciado)
-  RegistroConsultaServiceTests.cs      -> el servicio completo con repositorios mockeados (Moq)
-```
+Cada uno de estos intentos —se le haya dado la información o no— queda guardado, con
+fecha y hora, para poder revisar después quién consultó qué.
 
-## Cómo ejecutarlo
+## Cómo está organizado el código
 
-Requisitos: .NET 8 SDK. SQL Server solo hace falta para probar contra datos reales; los
-tests no lo necesitan.
+- Una parte recibe la solicitud y decide qué responder.
+- Otra parte tiene las reglas explicadas arriba (permiso, límite diario, búsqueda).
+- Otra parte se encarga de leer y guardar los datos en la base de datos.
 
-### 1. Base de datos (opcional, solo para probar el endpoint de verdad)
+Separarlo así hace que cada regla se pueda revisar y probar por separado, sin tener que
+correr todo el sistema completo cada vez.
 
-Ejecuta primero el esquema y los datos de prueba de la Pregunta 7:
+También hay un conjunto de pruebas automáticas que verifican, entre otras cosas, que el
+límite diario de consultas se calcule correctamente.
+
+> Este programa necesita las tablas que se crean en la carpeta
+> [`pregunta-7-esquema-basedatos`](../pregunta-7-esquema-basedatos) para poder guardar y
+> consultar datos reales.
+
+## Cómo probarlo
+
+Se necesita tener instalado el **.NET 8 SDK** (el programa que permite ejecutar este tipo
+de proyectos) y, si se quiere probar con datos reales, un **SQL Server** disponible.
+
+### 1. Preparar la base de datos (opcional)
+
+Si quieres probarlo contra datos reales, primero crea las tablas y carga algunos datos de
+ejemplo (esto está explicado en la carpeta de la pregunta 7):
 
 ```bash
 sqlcmd -S localhost -i ../pregunta-7-esquema-basedatos/schema.sql
 sqlcmd -S localhost -i ../pregunta-7-esquema-basedatos/datos-prueba.sql
 ```
 
-Ajusta `ConnectionStrings:SqlServer` en `src/RegistrosInstitucionales.Api/appsettings.json`
-si tu servidor no es `localhost` con autenticación de Windows.
+### 2. Encender el programa
 
-### 2. Levantar la API
+Abre una terminal en esta carpeta y escribe:
 
 ```bash
 cd src/RegistrosInstitucionales.Api
 dotnet run
 ```
 
-En modo desarrollo, Swagger queda disponible en `/swagger`.
+Esto deja el programa corriendo y esperando solicitudes. También se abre una página de
+prueba (Swagger) donde se puede probar el endpoint desde el navegador, sin necesidad de
+escribir comandos.
 
-### 3. Probar el endpoint
+### 3. Hacer una prueba real
 
-Con los datos de `datos-prueba.sql` cargados, la API Key de prueba (texto plano) es
-`clave-demo-123`:
+Con los datos de ejemplo ya cargados, se puede simular una consulta con este comando (la
+clave de acceso de prueba es `clave-demo-123`):
 
 ```bash
 curl -k -X POST https://localhost:7000/api/registros/consulta \
@@ -59,49 +77,25 @@ curl -k -X POST https://localhost:7000/api/registros/consulta \
   -d "{\"identificador\": \"8-123-456\", \"nombre\": \"Juan Pérez\"}"
 ```
 
-| Caso | Cómo provocarlo | Respuesta esperada |
-|---|---|---|
-| Éxito | Datos de arriba, tal cual | `200 OK` con el registro |
-| Falta la API Key | Quitar el header `X-API-Key` | `401 Unauthorized` |
-| API Key inválida | Usar cualquier otro texto en `X-API-Key` | `401 Unauthorized` |
-| Convenio vencido/inactivo | `FechaVencimiento` en el pasado o `Activo = 0` | `403 Forbidden` |
-| Falta el nombre o el identificador | Omitir `nombre` en el body | `400 Bad Request` |
-| Registro no encontrado | Identificador inexistente | `404 Not Found` |
-| Cuota diaria superada | Bajar `CuotaDiaria` de la entidad a un número ya alcanzado | `429 Too Many Requests` |
+Con esos datos de ejemplo, debería responder con la información del registro. Si cambias
+la clave de acceso por cualquier otra, o borras el dato del nombre, vas a ver que el
+programa responde explicando qué faltó o qué salió mal, en vez de simplemente fallar.
 
-Cada intento (aprobado o rechazado) queda en `dbo.LogAccesos`.
-
-### 4. Correr los tests
+### 4. Correr las pruebas automáticas
 
 ```bash
-cd ..    # a la raíz de esta carpeta (pregunta-4-api-registros)
+cd ..
 dotnet test
 ```
 
-## Cómo se cubrió cada criterio de evaluación
+Si todo está bien, debería decir que todas las pruebas pasaron correctamente.
 
-- **Separación de capas**: `Controller` → `Service` → `Repository`, cada uno con su interfaz.
-- **Errores HTTP**: 401 (sin API Key o inválida), 403 (convenio inactivo/vencido), 400
-  (validación de campos vía `[ApiController]` + DataAnnotations), 404 (no encontrado), 429
-  (cuota superada), 500 (excepción no controlada, capturada por un middleware global en
-  `Program.cs` para no filtrar detalles internos al cliente).
-- **Validaciones de entrada**: DataAnnotations en `Dtos/ConsultaRegistroRequest.cs`
-  (`[Required]` en ambos campos, así nunca se permite buscar solo por identificador).
-- **Acceso a datos**: Entity Framework Core sobre SQL Server.
-- **Inyección de dependencias**: todo registrado en `Program.cs`.
-- **Test unitario de cuota diaria**: `CuotaDiariaTests.cs` prueba la función pura
-  `RegistroConsultaService.SuperoCuotaDiaria(...)` con varios casos límite.
+## Decisiones que se tomaron y por qué
 
-## Decisiones de diseño
-
-- **Autenticación por API Key** como un `IAsyncActionFilter`
-  (`Auth/ApiKeyAuthFilter.cs`) que corre antes del controller, resuelve la entidad y la deja
-  en `HttpContext.Items`. Así el controller no repite la búsqueda ni mezcla autenticación con
-  lógica de negocio. Solo se guarda el hash SHA-256 de la API Key, nunca el texto plano
-  (`Auth/ApiKeyHasher.cs`).
-- **El servicio no conoce HTTP**: devuelve un resultado de negocio neutro
-  (`Services/ResultadoConsultaRegistro.cs`) y es el controller quien traduce eso a un código
-  HTTP. Facilita testear el servicio sin necesitar `HttpContext`.
-- **Cuota diaria**: la validación "real" vive acá (para poder responder 429 con contexto). El
-  trigger SQL de la Pregunta 7 (punto 15) es una segunda barrera a nivel de base de datos por
-  si algo escribe directo a la tabla sin pasar por esta API.
+- **La clave de acceso nunca se guarda tal cual.** Se guarda una versión "encriptada" de
+  ella, para que ni siquiera alguien con acceso a la base de datos pueda ver la clave
+  original.
+- **El límite diario se revisa en dos lugares distintos:** una vez en el programa (que es
+  donde se le explica al usuario por qué se le negó la respuesta) y otra vez directamente
+  en la base de datos, como respaldo, por si algún día alguien intenta escribir en la base
+  de datos sin pasar por este programa.

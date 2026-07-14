@@ -1,54 +1,44 @@
-# Pregunta 7 — Esquema de base de datos en SQL Server (10 pts)
+# Pregunta 7 — Diseño de las tablas donde se guarda todo
 
-Script completo en [`schema.sql`](schema.sql): `CREATE TABLE`, índices y el trigger de cuota
-diaria, todo comentado. [`datos-prueba.sql`](datos-prueba.sql) tiene una entidad y un registro
-de ejemplo para poder probar el endpoint de la [Pregunta 4](../pregunta-4-api-registros) a
-mano.
+## ¿Qué hace esto?
 
-## Cómo ejecutarlo
+Este archivo (`schema.sql`) es como el "plano" de la base de datos: define las tres
+"cajas" donde se guarda la información, más un par de reglas de seguridad automáticas.
+`datos-prueba.sql` agrega un par de datos de ejemplo, para poder probar el programa de la
+[pregunta 4](../pregunta-4-api-registros) sin tener que escribir todo a mano.
+
+## Cómo crear las tablas
 
 ```bash
 sqlcmd -S localhost -i schema.sql
 sqlcmd -S localhost -i datos-prueba.sql
 ```
 
-## 11. Tabla principal de registros
+## Las tres "cajas" de información
 
-`Registros`: los cuatro campos de salida del endpoint (`Estado`, `NumeroRegistro`,
-`FechaEvento`, `FechaInscripcion`) más `Identificador` y `Nombre`, que son los campos por los
-que se busca.
+- **Organizaciones autorizadas** — quién puede consultar, si su acceso sigue vigente, y
+  cuántas consultas puede hacer por día (cada organización puede tener un límite distinto).
+- **Registros** — la información que se puede consultar: el número de registro, su
+  estado, y las fechas relacionadas.
+- **Historial de accesos** — queda anotado cada intento de consulta, se haya aprobado o
+  no, con la fecha y el motivo. Esto sirve para dos cosas: poder revisar después quién
+  consultó qué, y calcular cuántas consultas ya hizo cada organización hoy.
 
-## 12. Tabla de entidades autorizadas
+## Dos atajos para que las búsquedas sean rápidas
 
-`Entidades`: `FechaInicioConvenio` y `FechaVencimiento` (vigencia del convenio), `CuotaDiaria`
-—configurable por entidad, a diferencia del legado donde estaba fija en 5000 para todas— y
-`Activo`.
+Cuando una tabla tiene muchísimos datos, buscar algo puede ser lento si no se le da una
+"guía" al sistema para encontrar las cosas más rápido. Se agregaron dos de esas guías:
 
-## 13. Tabla de log de accesos
+- Una para cuando alguien busca un registro por número de identificación y nombre (que es
+  como siempre se busca, según lo pedido en la pregunta 4).
+- Otra para cuando el sistema necesita contar rápidamente cuántas consultas aprobadas hizo
+  una organización en el día de hoy.
 
-`LogAccesos`: entidad, fecha/hora, tipo de consulta, identificador consultado, resultado y
-motivo. Con esos campos alcanza tanto para auditoría (quién consultó qué y cuándo) como para
-calcular la cuota diaria (contar aprobados de hoy por entidad).
+## Un candado automático para el límite diario
 
-## 14. Índices justificados
-
-- **`IX_Registros_Identificador_Nombre`** sobre `(Identificador, Nombre)`, con columnas
-  incluidas para cubrir toda la respuesta del endpoint. Cubre el patrón de búsqueda puntual:
-  la especificación de la Pregunta 4 prohíbe buscar solo por identificador, así que los dos
-  campos siempre llegan juntos.
-- **`IX_LogAccesos_EntidadId_FechaHora_Aprobado`** sobre `(EntidadId, FechaHora)`, **filtrado**
-  por `Resultado = 'APROBADO'`. El cálculo de cuota diaria solo cuenta consultas aprobadas de
-  hoy; filtrar directamente en el índice lo mantiene chico (no indexa los rechazos, que son la
-  mayoría de las filas en un escenario con abuso de cuota) y más rápido de mantener.
-
-## 15. Constraint / trigger de cuota diaria
-
-`TR_LogAccesos_ValidarCuotaDiaria`: si un `INSERT` dejaría a una entidad con más consultas
-`APROBADO` hoy que su `CuotaDiaria`, se revierte la transacción (`ROLLBACK` + `THROW`).
-
-La validación "de verdad" vive en el servicio C# de la
-[Pregunta 4](../pregunta-4-api-registros) (`RegistroConsultaService`), porque ahí se puede
-responder `429` con un mensaje claro antes de tocar la base. Este trigger es una **segunda
-barrera** (defensa en profundidad): protege la integridad del dato aunque algo escriba
-directo a la tabla sin pasar por la API, o ante una condición de carrera entre dos requests
-simultáneos.
+Se agregó una regla directamente en la base de datos que impide guardar una consulta
+"aprobada" si la organización ya alcanzó su límite del día. Esta regla es un respaldo: la
+comprobación principal ya la hace el programa de la pregunta 4 (que además le explica al
+usuario por qué se le negó la respuesta), pero esta segunda capa de seguridad protege la
+información aunque, por algún motivo, alguien intente modificar la base de datos
+directamente, sin pasar por el programa.

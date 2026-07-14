@@ -1,48 +1,27 @@
-# Prueba técnica — Desarrollador Fullstack
+# Prueba técnica del módulo 2 - vicente urriola
 
-Repositorio de código para el **Módulo II** de la evaluación técnica (preguntas 4 a 15). El
-**Módulo I** (análisis contextual y comunicación técnica, preguntas 1 a 3) se entrega aparte,
-en un documento de texto (Word/PDF), tal como pide el enunciado.
+Este repositorio junta las cuatro respuestas de la parte práctica de la prueba (las que
+piden entregar código, no solo texto). Cada respuesta vive en su propia carpeta, separada
+de las demás, para que sea fácil ver dónde está cada una.
 
-Cada pregunta con ejercicio de código tiene su **propia carpeta**, independiente de las
-demás, con su código, su análisis escrito y su propio README con instrucciones de ejecución.
+## ¿Qué hay en cada carpeta?
 
-## Índice de respuestas por pregunta
+| Pregunta | Carpeta | En simple |
+|---|---|---|
+| 4 | [`pregunta-4-api-registros/`](pregunta-4-api-registros) | Un programa que recibe una solicitud, revisa que quien pregunta tenga permiso, y responde si el registro existe o no. |
+| 5 | [`pregunta-5-migracion-sql/`](pregunta-5-migracion-sql) | Una consulta a una base de datos vieja que se corrigió y se adaptó al sistema nuevo. |
+| 6 | [`pregunta-6-formulario-entidad/`](pregunta-6-formulario-entidad) | Un formulario web para registrar una nueva organización, con avisos claros si algo falta o está mal escrito. |
+| 7 | [`pregunta-7-esquema-basedatos/`](pregunta-7-esquema-basedatos) | El diseño de las tablas donde se guarda toda esa información. |
 
-| Pregunta | Carpeta |
-|---|---|
-| 4 — API REST .NET 8 (endpoint de consulta) | [`pregunta-4-api-registros/`](pregunta-4-api-registros) |
-| 5 — Migración SQL Sybase → SQL Server + LINQ | [`pregunta-5-migracion-sql/`](pregunta-5-migracion-sql) |
-| 6 — Formulario frontend de registro de entidad | [`pregunta-6-formulario-entidad/`](pregunta-6-formulario-entidad) |
-| 7 — Esquema de base de datos SQL Server | [`pregunta-7-esquema-basedatos/`](pregunta-7-esquema-basedatos) |
+## ¿Cómo se conecta todo?
 
-Entra a cada carpeta para ver el análisis escrito (problemas identificados, justificación de
-índices, decisiones de diseño, etc.) y las instrucciones puntuales para correrla.
+Estas cuatro piezas no son independientes entre sí: son parte de un mismo sistema.
 
-## Estructura del repositorio
+1. Primero se crean las tablas de la carpeta de la **pregunta 7** (ahí se guarda todo).
+2. El programa de la **pregunta 4** lee y escribe en esas mismas tablas.
+3. La consulta de la **pregunta 5** también usa esas tablas, para armar un reporte.
+4. El formulario de la **pregunta 6** es la parte visual: lo que vería una persona usando
+   el sistema para registrar una organización nueva.
 
-```
-pregunta-4-api-registros/     -> API .NET 8: endpoint de consulta + tests
-pregunta-5-migracion-sql/     -> Consulta migrada Sybase -> SQL Server + equivalente LINQ
-pregunta-6-formulario-entidad/-> Formulario React de registro de entidad
-pregunta-7-esquema-basedatos/ -> Script SQL Server: tablas, índices y trigger
-```
-
-Las preguntas 4 y 7 comparten el mismo modelo de datos (la Pregunta 4 corre contra las tablas
-que crea la Pregunta 7), y la Pregunta 5 reutiliza esas mismas tablas para su reporte — cada
-README lo señala donde corresponde.
-
-## Cómo ejecutar todo
-
-1. **Pregunta 7** — corre `schema.sql` y `datos-prueba.sql` para tener la base de datos.
-2. **Pregunta 4** — `dotnet run` para levantar la API, `dotnet test` para los tests.
-3. **Pregunta 5** — `dotnet build` dentro de `linq-equivalente/` para verificar que compila.
-4. **Pregunta 6** — `npm install && npm run dev` para el formulario.
-
-El detalle completo de cada paso está en el README de la carpeta correspondiente.
-
-## Sobre este código
-
-Esta prueba se resolvió con el nivel de un desarrollador fullstack junior: se priorizó que
-cada pieza funcione, esté bien organizada en capas y sea fácil de seguir, más que mostrar
-patrones avanzados o abstracciones que no pide el enunciado.
+Cada carpeta tiene su propio archivo de instrucciones (README) explicando, paso a paso y
+en lenguaje simple, cómo probar esa parte.

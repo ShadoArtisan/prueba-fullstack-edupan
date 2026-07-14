@@ -1,25 +1,28 @@
-# Pregunta 6 — Formulario de registro de entidad
+# Pregunta 6 — Formulario para registrar una nueva organización
 
-Formulario en React (Vite) para registrar una nueva entidad en el módulo administrativo.
+## ¿Qué hace esto?
 
-## Qué incluye
+Es una página web con un formulario para dar de alta a una organización nueva que va a
+usar el sistema. Pide estos datos:
 
-- Los 7 campos pedidos en el enunciado, con validación en el cliente antes de enviar.
-- Mensajes de error por campo, en español simple (sin términos técnicos).
-- Envío al backend con `fetch` a `POST /api/entidades` (usando `FormData` porque hay dos archivos adjuntos).
-- Manejo de los tres estados de la petición: cargando, éxito y error.
+- Número de identificación fiscal de la organización (con un dígito de control, para
+  detectar si alguien se equivocó al escribirlo).
+- Nombre oficial de la organización.
+- Dirección de internet (IP) del servidor desde el que va a conectarse.
+- Nombre de la persona técnica encargada.
+- Correo de la persona responsable de proteger los datos.
+- Dos documentos en PDF: la autorización institucional y la resolución que habilita a la
+  organización.
 
-Todo el código relevante está en `src/`:
+Antes de enviar el formulario, la página revisa que cada dato esté completo y bien escrito,
+y si algo falta o está mal, muestra un aviso claro al lado de ese campo (por ejemplo: "la
+dirección de internet no tiene el formato correcto"), en vez de un mensaje confuso. Recién
+cuando todo está correcto, la página envía la información al sistema y muestra si el
+registro se guardó con éxito o si hubo algún problema.
 
-| Archivo | Qué hace |
-|---|---|
-| `src/utils/validaciones.js` | Reglas de validación de cada campo (identificador con dígito verificador, IPv4, correo, tamaño/tipo de PDF) |
-| `src/components/FormularioEntidad.jsx` | El formulario en sí: estado, validación y envío |
-| `src/api/entidadesApi.js` | Llamada `fetch` al backend |
+## Cómo probarlo
 
-## Cómo ejecutarlo
-
-Requisitos: Node.js 18 o superior.
+Se necesita tener instalado **Node.js** (versión 18 o más nueva).
 
 ```bash
 cd pregunta-6-formulario-entidad
@@ -27,23 +30,25 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173`.
+El primer comando entra a la carpeta, el segundo instala lo necesario para que funcione, y
+el tercero enciende la página. Después de eso, abre esta dirección en el navegador:
 
-Por defecto el formulario intenta enviar los datos a `https://localhost:7000` (la URL por
-defecto del backend en desarrollo, ver [`../pregunta-4-api-registros/README.md`](../pregunta-4-api-registros/README.md)).
-Si tu backend corre en otra URL, copia `.env.example` a `.env` y ajusta `VITE_API_BASE_URL`.
+```
+http://localhost:5173
+```
 
-## Cómo se probó
+Por defecto, el formulario intenta enviar los datos al programa de la
+[pregunta 4](../pregunta-4-api-registros), que debe estar encendido en otra ventana para
+que el envío funcione de principio a fin. Si ese programa corre en otra dirección, se
+puede ajustar copiando el archivo `.env.example` a uno nuevo llamado `.env` y cambiando el
+valor de adentro.
 
-Se levantó el servidor de desarrollo y se verificó a mano en el navegador:
+## Cómo se comprobó que funciona
 
-- Enviar el formulario vacío muestra un mensaje de error específico debajo de cada campo
-  (identificador, nombre, IP, enlace técnico, correo y los dos adjuntos).
-- Un identificador con el dígito verificador incorrecto, una IP con octetos fuera de rango
-  (`999.999.1.1`) y un correo sin `@` muestran su propio mensaje, sin jerga técnica.
-- Al corregir un campo, solo desaparece el error de ese campo; los demás se mantienen hasta
-  corregirse.
+Se abrió la página en el navegador y se probó a mano:
 
-No se dejó corriendo un backend real durante la prueba manual, así que el camino "feliz"
-completo (200 OK del servidor) se valida ejecutando el backend según su propio README y
-repitiendo el envío con los dos PDF adjuntos.
+- Enviar el formulario vacío: aparece un aviso debajo de cada campo, explicando qué falta.
+- Escribir una dirección de internet inventada (como `999.999.1.1`) o un correo sin
+  arroba: cada uno muestra su propio aviso, en palabras simples.
+- Corregir un solo campo: solo desaparece el aviso de ese campo, los demás se mantienen
+  hasta corregirse también.
