@@ -1,42 +1,27 @@
-# Pregunta 7 — Diseño de las tablas donde se guarda todo
+# Pregunta 7 — Diseño del esquema de Base de Datos
 
-## De qué va esto
+En el archivo `schema.sql` definí la estructura relacional del sistema y algunas restricciones de integridad. Además, armé un `datos-prueba.sql` con data mockeada para poder testear los endpoints de la [pregunta 4](../pregunta-4-api-registros) sin problemas.
 
-`schema.sql` es el "plano" de la base de datos: define las tres cajas donde se guarda la
-información, más un par de reglas de seguridad automáticas. `datos-prueba.sql` agrega
-algunos datos de ejemplo, para poder probar el programa de la
-[pregunta 4](../pregunta-4-api-registros) sin tener que escribir todo a mano.
-
-## Cómo crear las tablas
+## Ejecutar scripts
 
 ```bash
 sqlcmd -S localhost -i schema.sql
 sqlcmd -S localhost -i datos-prueba.sql
 ```
 
-## Las tres cajas de información
+## Estructura de tablas
 
-- **Organizaciones autorizadas** — quién puede consultar, si su acceso sigue vigente, y
-  cuántas consultas puede hacer por día (cada una puede tener un límite distinto).
-- **Registros** — lo que se puede consultar: número de registro, estado, y las fechas
-  relacionadas.
-- **Historial de accesos** — queda anotado cada intento de consulta, se haya aprobado o
-  no, con fecha y motivo. Sirve para dos cosas: revisar después quién consultó qué, y
-  calcular cuántas consultas ya hizo cada organización hoy.
+El esquema se centra en tres entidades principales:
+- **Organizaciones:** Almacena los clientes autorizados, su estado de vigencia y el límite de requests (rate limit) que tienen permitido por día.
+- **Registros:** Contiene el catálogo consultable (número de registro, estado, fechas).
+- **Historial de accesos:** Tabla transaccional para auditoría. Registra cada intento de consulta contra la API (aprobado o rechazado) y es la tabla que se usa para calcular el consumo diario por entidad.
 
-## Dos atajos para que las búsquedas no sean lentas
+## Optimización y Rendimiento
 
-Cuando una tabla tiene muchísimos datos, buscar algo puede ponerse lento si no se le da
-una guía al sistema para encontrar las cosas más rápido. Agregué dos de esas guías: una
-para cuando alguien busca un registro por identificación y nombre (que es como siempre se
-busca, según la pregunta 4), y otra para cuando el sistema necesita contar rápido cuántas
-consultas aprobadas hizo una organización hoy.
+Agregué un par de índices no agrupados (Non-Clustered Indexes) para acelerar las lecturas en tablas que tienden a crecer mucho:
+1. Un índice compuesto para optimizar las búsquedas conjuntas por `identificación` y `nombre` (el caso de uso principal de la API).
+2. Un índice sobre el historial de consultas para agilizar el conteo del rate limiting diario (COUNT) de cada organización.
 
-## Un candado automático para el límite diario
+## Integridad de datos (Constraints)
 
-Agregué una regla directo en la base de datos que impide guardar una consulta "aprobada"
-si la organización ya llegó a su límite del día. Es un respaldo: la comprobación
-principal ya la hace el programa de la pregunta 4 (que además le explica al usuario por
-qué se le negó la respuesta), pero esta segunda capa protege la información aunque, por
-algún motivo, alguien intente modificar la base de datos directamente, sin pasar por el
-programa.
+Para hacer el diseño más robusto, implementé un trigger/constraint a nivel de base de datos que aborta la inserción de una consulta "aprobada" en el historial si la organización ya superó su cuota del día. El backend ya maneja esto limpiamente, pero sirve como última barrera de defensa para mantener la consistencia de los datos en caso de una intervención directa en la base de datos.
