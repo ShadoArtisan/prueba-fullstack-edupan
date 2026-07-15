@@ -27,21 +27,9 @@ Cada carpeta tiene su propio README con los pasos para probar esa parte.
 
 ## Qué hace falta tener instalado
 
-Para poder correr todo el código de este repositorio (no solo leerlo) hace falta:
-
-- **.NET 8 SDK** — corre el programa de la pregunta 4 y el proyecto de la pregunta 5.
-  Se descarga gratis desde el sitio oficial de Microsoft (dotnet.microsoft.com). No hace
-  falta un IDE especial: alcanza con la terminal, aunque si quieres editar el código
-  cómodamente, **Visual Studio**, **Visual Studio Code** (con la extensión de C#) o
-  **Rider** funcionan bien.
-- **Node.js 18 o más nuevo** (incluye `npm`) — corre el formulario de la pregunta 6.
-  También gratis, desde nodejs.org.
-- **SQL Server** — donde se crean las tablas de la pregunta 7 y contra el que corre el
-  programa de la pregunta 4. Puede ser SQL Server Express, Developer Edition, LocalDB, o
-  un contenedor de Docker con SQL Server; cualquiera de esas opciones sirve.
-- **sqlcmd** (para ejecutar los archivos `.sql` desde la terminal) o, si lo prefieres,
-  **SQL Server Management Studio (SSMS)** para hacerlo con una interfaz gráfica.
-- Opcional: **curl** o algo como **Postman**/**Insomnia** para probar el programa de la
-  pregunta 4 a mano, enviándole solicitudes de prueba.
-
-Nada de esto tiene costo, todas son herramientas gratuitas.
+- .NET 8 SDK
+- Node.js 18 o más nuevo (incluye npm)
+- SQL Server (Express, Developer Edition, LocalDB o Docker)
+- sqlcmd o SQL Server Management Studio (SSMS)
+- Opcional: curl, Postman o Insomnia
+- Opcional: Visual Studio, Visual Studio Code o Rider
